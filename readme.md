@@ -2,11 +2,14 @@
 
 一套可定制化的桌面开发工具，集成了 webview 窗口、系统托盘的机制
 
+**仅支持 windows 系统**
+
 ## 特性
 
 - 基于 webview 的桌面开发工具，使用 webview2 驱动，纯 Go 语言实现，无 CGO 依赖
 - 启动窗口时自动检测 webview2 环境，如果未安装，则自动运行安装 webview2 引导
 - 支持 webview 常规操作，如跳转，注入 js，js 与 go 交互等操作
+- 支持多个窗口管理，支持无边框窗口
 - 支持 css 设置 `-webkit-app-region: drag` 后拖拽窗口
 - 系统托盘支持，托盘支持菜单，支持无限级子菜单
 - TODO: 自更新机制
@@ -14,7 +17,10 @@
 # DEMO
 
 
-https://github.com/eyasliu/desktop/assets/4774683/2c21e38a-cead-47d8-b847-01345b77329d
+
+https://github.com/eyasliu/desktop/assets/4774683/d07c2d09-fe41-4ea1-ad5f-b095e9915e19
+
+
 
 可使用以下命令快速启动示例程序
 
