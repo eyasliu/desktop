@@ -84,7 +84,7 @@ type browser interface {
 type webview struct {
 	hwnd        uintptr
 	mainthread  uintptr
-	browser     browser
+	browser     *edge.Chromium
 	autofocus   bool
 	hideOnClose bool
 	maxsz       w32.Point
@@ -617,7 +617,7 @@ func (w *webview) Show() {
 }
 
 func (w *webview) SetFallbackPage(html string) error {
-	chromium := w.browser.(*edge.Chromium)
+	chromium := w.browser
 	chromium.PutIsBuiltInErrorPageEnabled(false)
 	chromium.NavigationCompletedCallback = func(sender *edge.ICoreWebView2, args *edge.ICoreWebView2NavigationCompletedEventArgs) {
 		if !args.IsSuccess() {

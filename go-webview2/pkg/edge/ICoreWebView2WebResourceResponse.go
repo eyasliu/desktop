@@ -1,4 +1,8 @@
+//go:build windows
+
 package edge
+
+import "unsafe"
 
 type _ICoreWebView2WebResourceResponseVtbl struct {
 	_IUnknownVtbl
@@ -16,6 +20,9 @@ type ICoreWebView2WebResourceResponse struct {
 }
 
 func (i *ICoreWebView2WebResourceResponse) AddRef() uintptr {
-	r, _, _ := i.vtbl.AddRef.Call()
-	return r
+	return i.AddRef()
+}
+
+func (i *ICoreWebView2WebResourceResponse) Release() error {
+	return i.vtbl.CallRelease(unsafe.Pointer(i))
 }

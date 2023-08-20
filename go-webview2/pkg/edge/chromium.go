@@ -305,6 +305,7 @@ func (e *Chromium) WebResourceRequested(sender *ICoreWebView2, args *ICoreWebVie
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer req.Release()
 	if e.WebResourceRequestedCallback != nil {
 		e.WebResourceRequestedCallback(req, args)
 	}

@@ -51,6 +51,7 @@ func main() {
 				Title: "打开本地页面",
 				OnClick: func() {
 					app.SetHtml(`<h1>这是个本地页面</h1>
+					<a href="http://baidu.com">baidu.com</a>
 				<div style="-webkit-app-region: drag">设置css： -webkit-app-region: drag 可移动窗口</div>`)
 				},
 			},

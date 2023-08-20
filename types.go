@@ -3,11 +3,11 @@ package desktop
 import (
 	_ "embed"
 	"fmt"
+	"net/http"
 
 	"github.com/eyasliu/desktop/tray"
 )
 
-//
 type logger interface {
 	Info(v ...interface{})
 }
@@ -114,4 +114,9 @@ type WebView interface {
 	Hide()
 	// Show 显示窗口
 	Show()
+
+	// ServerHandleFunc 拦截路由，使用 http.HandlerFunc 函数处理
+	ServerHandleFunc(pattern string, handler http.HandlerFunc)
+	// ServerHandle 拦截路由，使用 http.Handler 实例的 ServerHTTP 处理
+	ServerHandle(pattern string, server http.Handler)
 }

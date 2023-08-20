@@ -1,6 +1,7 @@
 package webview2
 
 import (
+	"net/http"
 	"runtime"
 	"unsafe"
 
@@ -42,14 +43,17 @@ type bindParam struct {
 }
 
 type Window struct {
-	webview *webview
+	webview     *webview
+	serverRoute map[string]http.HandlerFunc
 }
 
 func NewWin(option WebViewOptions) *Window {
 	runtime.LockOSThread()
 	win := &Window{
-		webview: NewWithOptions(option).(*webview),
+		webview:     NewWithOptions(option).(*webview),
+		serverRoute: make(map[string]http.HandlerFunc),
 	}
+	win.webview.browser.WebResourceRequestedCallback = win.processRequest
 	return win
 }
 
