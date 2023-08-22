@@ -15,6 +15,12 @@ var (
 	kernel32                   = windows.NewLazySystemDLL("kernel32")
 	Kernel32GetCurrentThreadID = kernel32.NewProc("GetCurrentThreadId")
 
+	shcore                       = windows.NewLazySystemDLL("shcore")
+	ShcoreSetProcessDpiAwareness = shcore.NewProc("SetProcessDpiAwareness")
+
+	gdi32              = windows.NewLazySystemDLL("gdi32")
+	Gdi32GetDeviceCaps = gdi32.NewProc("GetDeviceCaps")
+
 	shlwapi                  = windows.NewLazySystemDLL("shlwapi")
 	shlwapiSHCreateMemStream = shlwapi.NewProc("SHCreateMemStream")
 
@@ -34,6 +40,7 @@ var (
 	User32DispatchMessageW   = user32.NewProc("DispatchMessageW")
 	User32DefWindowProcW     = user32.NewProc("DefWindowProcW")
 	User32GetClientRect      = user32.NewProc("GetClientRect")
+	User32GetWindowRect      = user32.NewProc("GetWindowRect")
 	User32PostQuitMessage    = user32.NewProc("PostQuitMessage")
 	User32PostMessageW       = user32.NewProc("PostMessageW")
 	User32SetWindowTextW     = user32.NewProc("SetWindowTextW")
@@ -46,6 +53,9 @@ var (
 	User32GetAncestor        = user32.NewProc("GetAncestor")
 	User32ReleaseCapture     = user32.NewProc("ReleaseCapture")
 	User32SendMessage        = user32.NewProc("SendMessageW")
+	User32GetDpiForWindow    = user32.NewProc("GetDpiForWindow")
+	User32GetDC              = user32.NewProc("GetDC")
+	User32ReleaseDC          = user32.NewProc("ReleaseDC")
 )
 
 const (
@@ -90,6 +100,7 @@ const (
 )
 
 const (
+	WMCreate        = 0x0001
 	WMDestroy       = 0x0002
 	WMMove          = 0x0003
 	WMSize          = 0x0005
@@ -104,6 +115,7 @@ const (
 	WMMouseLeave    = 0x02A3
 	WMLButtonDown   = 0x0201
 	WMParentNotify  = 0x0210
+	WMDpiChanged    = 0x02E0
 )
 
 const (

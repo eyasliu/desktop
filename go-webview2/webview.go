@@ -313,9 +313,34 @@ func (w *webview) dragAppRegion() {
 	w32.User32PostMessageW.Call(w.hwnd, 161, 2, 0)
 }
 
+func (w *webview) updateWinForDpi(hwnd uintptr) {
+	var bounds w32.Rect
+	w32.User32GetWindowRect.Call(hwnd, uintptr(unsafe.Pointer(&bounds)))
+
+	if bounds.Right == 0 || bounds.Bottom == 0 {
+		return
+	}
+
+	posX := bounds.Left
+	posY := bounds.Top
+	width := bounds.Right - bounds.Left
+	height := bounds.Bottom - bounds.Top
+
+	_iDpi, _, _ := w32.User32GetDpiForWindow.Call(hwnd)
+	iDpi := int32(_iDpi)
+	dpiScaledX := uintptr((posX * iDpi) / 960)
+	dpiScaledY := uintptr((posY * iDpi) / 960)
+
+	dpiScaledWidth := uintptr((width * iDpi) / 96)
+	dpiScaledHeight := uintptr((height * iDpi) / 96)
+	w32.User32SetWindowPos.Call(hwnd, 0, dpiScaledX, dpiScaledY, dpiScaledWidth, dpiScaledHeight, 0x0010|0x0004)
+}
+
 func (w *webview) wndproc(hwnd, msg, wp, lp uintptr) uintptr {
 	if w, ok := getWindowContext(hwnd).(*webview); ok {
 		switch msg {
+		case w32.WMCreate, w32.WMDpiChanged:
+			w.updateWinForDpi(hwnd)
 		case w32.WMMove, w32.WMMoving:
 			_ = w.browser.NotifyParentWindowPositionChanged()
 		case w32.WMNCLButtonDown:
@@ -359,6 +384,7 @@ func (w *webview) wndproc(hwnd, msg, wp, lp uintptr) uintptr {
 }
 
 func (w *webview) CreateWithOptions(opts WindowOptions) bool {
+	_, _, _ = w32.ShcoreSetProcessDpiAwareness.Call(2)
 	var hinstance windows.Handle
 	_ = windows.GetModuleHandleEx(0, nil, &hinstance)
 
@@ -412,6 +438,7 @@ func (w *webview) CreateWithOptions(opts WindowOptions) bool {
 		posX = w32.CW_USEDEFAULT
 		posY = w32.CW_USEDEFAULT
 	}
+
 	var winSetting uintptr = w32.WSOverlappedWindow
 	if opts.Frameless {
 		winSetting = w32.WSPopupWindow | w32.WSMinimizeBox | w32.WSMaximizeBox | w32.WSSizeBox
@@ -432,6 +459,7 @@ func (w *webview) CreateWithOptions(opts WindowOptions) bool {
 		0,
 	)
 	setWindowContext(w.hwnd, w)
+	w.updateWinForDpi(w.hwnd)
 
 	_, _, _ = w32.User32ShowWindow.Call(w.hwnd, w32.SWShow)
 	_, _, _ = w32.User32UpdateWindow.Call(w.hwnd)
@@ -441,6 +469,7 @@ func (w *webview) CreateWithOptions(opts WindowOptions) bool {
 		return false
 	}
 	w.browser.Resize()
+
 	w.appRegion()
 	return true
 }
@@ -450,37 +479,6 @@ func (w *webview) Destroy() {
 }
 
 func (w *webview) Run() {}
-
-func (w *webview) peekMsg() (w32.Msg, bool) {
-	var msg w32.Msg
-	// https://learn.microsoft.com/zh-cn/windows/win32/api/winuser/nf-winuser-peekmessagea
-	isOK, _, _ := w32.User32PeekMessageW.Call(
-		uintptr(unsafe.Pointer(&msg)),
-		0,
-		0,
-		0,
-		0x0001, // PM_REMOVE
-	)
-	return msg, isOK != 0
-}
-
-func (w *webview) getMsg() <-chan w32.Msg {
-	go func() {
-		var msg w32.Msg
-		// ch := make(chan w32.Msg, 1)
-
-		_, _, _ = w32.User32GetMessageW.Call(
-			uintptr(unsafe.Pointer(&msg)),
-			0,
-			0,
-			0,
-		)
-		w.msgs <- msg
-	}()
-
-	return w.msgs
-
-}
 
 func (w *webview) onMsg(msg w32.Msg) {
 	if msg.Message == w32.WMApp {
