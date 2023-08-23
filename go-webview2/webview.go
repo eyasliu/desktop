@@ -93,7 +93,7 @@ type webview struct {
 	bindings    map[string]interface{}
 	dispatchq   []func()
 	logger      logger
-	msgs        chan w32.Msg
+	windowOpts  WindowOptions
 }
 
 type logger interface {
@@ -152,7 +152,6 @@ func NewWithOptions(options WebViewOptions) WebView {
 	w.bindings = map[string]interface{}{}
 	w.autofocus = options.AutoFocus
 	w.hideOnClose = options.HideWindowOnClose
-	w.msgs = make(chan w32.Msg, 3)
 
 	chromium := edge.NewChromium()
 	chromium.MessageCallback = w.msgcb
@@ -314,25 +313,25 @@ func (w *webview) dragAppRegion() {
 }
 
 func (w *webview) updateWinForDpi(hwnd uintptr) {
-	var bounds w32.Rect
-	w32.User32GetWindowRect.Call(hwnd, uintptr(unsafe.Pointer(&bounds)))
-
-	if bounds.Right == 0 || bounds.Bottom == 0 {
-		return
-	}
-
-	posX := bounds.Left
-	posY := bounds.Top
-	width := bounds.Right - bounds.Left
-	height := bounds.Bottom - bounds.Top
+	width := uint32(w.windowOpts.Width)
+	height := uint32(w.windowOpts.Height)
 
 	_iDpi, _, _ := w32.User32GetDpiForWindow.Call(hwnd)
-	iDpi := int32(_iDpi)
-	dpiScaledX := uintptr((posX * iDpi) / 960)
-	dpiScaledY := uintptr((posY * iDpi) / 960)
+	dpr := float32(_iDpi) / 96
+	dpiScaledWidth := uintptr(float32(width) * dpr)
+	dpiScaledHeight := uintptr(float32(height) * dpr)
 
-	dpiScaledWidth := uintptr((width * iDpi) / 96)
-	dpiScaledHeight := uintptr((height * iDpi) / 96)
+	var dpiScaledX uintptr = 50
+	var dpiScaledY uintptr = 50
+	if w.windowOpts.Center {
+		// get screen size
+		screenWidth, _, _ := w32.User32GetSystemMetrics.Call(w32.SM_CXSCREEN)
+		screenHeight, _, _ := w32.User32GetSystemMetrics.Call(w32.SM_CYSCREEN)
+		// calculate window position
+		dpiScaledX = (screenWidth - dpiScaledWidth) / 2
+		dpiScaledY = (screenHeight - dpiScaledHeight) / 2
+	}
+
 	w32.User32SetWindowPos.Call(hwnd, 0, dpiScaledX, dpiScaledY, dpiScaledWidth, dpiScaledHeight, 0x0010|0x0004)
 }
 
@@ -384,6 +383,7 @@ func (w *webview) wndproc(hwnd, msg, wp, lp uintptr) uintptr {
 }
 
 func (w *webview) CreateWithOptions(opts WindowOptions) bool {
+	w.windowOpts = opts
 	_, _, _ = w32.ShcoreSetProcessDpiAwareness.Call(2)
 	var hinstance windows.Handle
 	_ = windows.GetModuleHandleEx(0, nil, &hinstance)
@@ -424,20 +424,10 @@ func (w *webview) CreateWithOptions(opts WindowOptions) bool {
 	if windowHeight == 0 {
 		windowHeight = 480
 	}
+	w.windowOpts.Width = windowWidth
+	w.windowOpts.Height = windowHeight
 
 	var posX, posY uint
-	if opts.Center {
-		// get screen size
-		screenWidth, _, _ := w32.User32GetSystemMetrics.Call(w32.SM_CXSCREEN)
-		screenHeight, _, _ := w32.User32GetSystemMetrics.Call(w32.SM_CYSCREEN)
-		// calculate window position
-		posX = (uint(screenWidth) - windowWidth) / 2
-		posY = (uint(screenHeight) - windowHeight) / 2
-	} else {
-		// use default position
-		posX = w32.CW_USEDEFAULT
-		posY = w32.CW_USEDEFAULT
-	}
 
 	var winSetting uintptr = w32.WSOverlappedWindow
 	if opts.Frameless {
