@@ -93,7 +93,6 @@ type webview struct {
 	bindings    map[string]interface{}
 	dispatchq   []func()
 	logger      logger
-	msgs        chan w32.Msg
 }
 
 type logger interface {
@@ -152,7 +151,6 @@ func NewWithOptions(options WebViewOptions) WebView {
 	w.bindings = map[string]interface{}{}
 	w.autofocus = options.AutoFocus
 	w.hideOnClose = options.HideWindowOnClose
-	w.msgs = make(chan w32.Msg, 3)
 
 	chromium := edge.NewChromium()
 	chromium.MessageCallback = w.msgcb
@@ -479,27 +477,6 @@ func (w *webview) Destroy() {
 }
 
 func (w *webview) Run() {}
-
-func (w *webview) onMsg(msg w32.Msg) {
-	if msg.Message == w32.WMApp {
-		w.m.Lock()
-		q := append([]func(){}, w.dispatchq...)
-		w.dispatchq = []func(){}
-		w.m.Unlock()
-		for _, v := range q {
-			v()
-		}
-	} else if msg.Message == w32.WMQuit {
-		return
-	}
-	r, _, _ := w32.User32GetAncestor.Call(uintptr(msg.Hwnd), w32.GARoot)
-	r, _, _ = w32.User32IsDialogMessage.Call(r, uintptr(unsafe.Pointer(&msg)))
-	if r != 0 {
-		return
-	}
-	_, _, _ = w32.User32TranslateMessage.Call(uintptr(unsafe.Pointer(&msg)))
-	_, _, _ = w32.User32DispatchMessageW.Call(uintptr(unsafe.Pointer(&msg)))
-}
 
 func (w *webview) Terminate() {
 	_, _, _ = w32.User32PostQuitMessage.Call(0)

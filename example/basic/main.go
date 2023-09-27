@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"runtime"
+	"time"
 
 	"github.com/eyasliu/desktop"
 	"github.com/eyasliu/desktop/tray"
@@ -11,6 +12,7 @@ import (
 
 //go:embed dog.ico
 var dogIco []byte
+var FallbackPage string = `<h1>出错了</h1>`
 
 func main() {
 	var app desktop.WebView
@@ -46,6 +48,10 @@ func main() {
 			{
 				Title:   "跳转到腾讯文档",
 				OnClick: func() { app.Navigate("https://docs.qq.com") },
+			},
+			{
+				Title:   "触发错误页",
+				OnClick: func() { app.Navigate("https://abcd.efgh.ijkl") },
 			},
 			{
 				Title: "打开本地页面",
@@ -130,11 +136,20 @@ func main() {
 		Title:             "basic 演示",
 		StartURL:          "https://www.wps.cn",
 		Tray:              appTray,
+		DataPath:          "C:\\Users\\Kingsoft\\.envokv2\\webview2",
+		FallbackPage:      FallbackPage,
 	})
 
 	app.Bind("golangFn", func(name string) string {
 		return fmt.Sprintf(`Hello %s, GOOS=%s`, name, runtime.GOOS)
 	})
+
+	// 为了验证没准备好就调用方法
+	go func() {
+		<-time.After(100 * time.Millisecond)
+		app.Show()
+		app.Navigate("https://www.wps.cn")
+	}()
 
 	app.Run()
 }
