@@ -87,6 +87,9 @@ type WebView interface {
 	// Destroy 销毁当前的窗口
 	Destroy()
 
+	// Terminate 销毁当前的窗口
+	Terminate()
+
 	// SetTitle 设置窗口的标题文字
 	SetTitle(title string)
 

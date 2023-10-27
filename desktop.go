@@ -49,6 +49,6 @@ func New(opt *Options) WebView {
 	if IsSupportTray() && opt.Tray != nil {
 		go tray.Run(opt.Tray)
 	}
-	w := webview2.NewWin(wvOpts)
+	w := webview2.NewWin(wvOpts, opt.Tray)
 	return w
 }

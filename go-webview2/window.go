@@ -47,11 +47,14 @@ type Window struct {
 	ready    bool
 	readyMu  sync.Mutex
 	preReady []func()
+	hasTray  bool
 }
 
-func NewWin(option WebViewOptions) *Window {
+func NewWin(option WebViewOptions, trayOpt *tray.Tray) *Window {
 	runtime.LockOSThread()
-	win := &Window{}
+	win := &Window{
+		hasTray: trayOpt != nil,
+	}
 	win.webview = NewWithOptions(option).(*webview)
 
 	return win
@@ -90,8 +93,9 @@ func (w *Window) Run() {
 				fn := event.data.(func())
 				w.webview.Dispatch(fn)
 			case eventDestroy:
-				runtime.UnlockOSThread()
-				tray.Quit()
+				if w.hasTray {
+					tray.Quit()
+				}
 				w.webview.Destroy()
 			case eventSetTitle:
 				title := event.data.(string)
@@ -177,8 +181,6 @@ func (w *Window) Dispatch(f func()) {
 }
 func (w *Window) Destroy() {
 	w.dispatch(eventDestroy, nil)
-	w32.User32PostThreadMessageW.Call(w.webview.mainthread, w32.WMQuit, 0, 0)
-
 }
 func (w *Window) Window() unsafe.Pointer {
 	return w.webview.Window()
