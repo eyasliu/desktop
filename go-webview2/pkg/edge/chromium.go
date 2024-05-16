@@ -41,7 +41,7 @@ type Chromium struct {
 	// Callbacks
 	MessageCallback              func(string)
 	WebResourceRequestedCallback func(request *ICoreWebView2WebResourceRequest, args *ICoreWebView2WebResourceRequestedEventArgs)
-	NavigationCompletedCallback  func(sender *ICoreWebView2, args *ICoreWebView2NavigationCompletedEventArgs)
+	NavigationCompletedCallback  []func(sender *ICoreWebView2, args *ICoreWebView2NavigationCompletedEventArgs)
 	AcceleratorKeyCallback       func(uint) bool
 
 	wv2Installed bool
@@ -359,8 +359,8 @@ func boolToInt(input bool) int {
 }
 
 func (e *Chromium) NavigationCompleted(sender *ICoreWebView2, args *ICoreWebView2NavigationCompletedEventArgs) uintptr {
-	if e.NavigationCompletedCallback != nil {
-		e.NavigationCompletedCallback(sender, args)
+	for _, h := range e.NavigationCompletedCallback {
+		h(sender, args)
 	}
 	return 0
 }
@@ -388,4 +388,8 @@ func (e *Chromium) PutIsBuiltInErrorPageEnabled(enable bool) error {
 		return err
 	}
 	return wvSetting.PutIsBuiltInErrorPageEnabled(enable)
+}
+
+func (e *Chromium) OnNavigationCompleted(h func(sender *ICoreWebView2, args *ICoreWebView2NavigationCompletedEventArgs)) {
+	e.NavigationCompletedCallback = append(e.NavigationCompletedCallback, h)
 }

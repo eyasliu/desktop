@@ -70,6 +70,10 @@ func loadIconFrom(src string) (windows.Handle, error) {
 	return h, nil
 }
 
+type navigationCompletedArg struct {
+	Success bool
+}
+
 type browser interface {
 	Embed(hwnd uintptr) bool
 	Resize()
@@ -186,15 +190,16 @@ func NewWithOptions(options WebViewOptions) WebView {
 		}
 	}
 
+	if options.FallbackPage != "" {
+		w.SetFallbackPage(options.FallbackPage)
+	}
+
 	if options.StartURL != "" {
 		w.Navigate(options.StartURL)
 	} else if options.StartHTML != "" {
 		w.SetHtml(options.StartHTML)
 	}
 
-	if options.FallbackPage != "" {
-		w.SetFallbackPage(options.FallbackPage)
-	}
 	return w
 }
 
@@ -591,13 +596,19 @@ func (w *webview) Show() {
 	w32.User32SwitchToThisWindow.Call(w.hwnd, uintptr(1))
 }
 
+func (w *webview) onNavigationCompleted(h func(args *navigationCompletedArg)) {
+	w.browser.(*edge.Chromium).OnNavigationCompleted(func(sender *edge.ICoreWebView2, args *edge.ICoreWebView2NavigationCompletedEventArgs) {
+		h(&navigationCompletedArg{Success: args.IsSuccess()})
+	})
+}
+
 func (w *webview) SetFallbackPage(html string) error {
 	chromium := w.browser.(*edge.Chromium)
 	chromium.PutIsBuiltInErrorPageEnabled(false)
-	chromium.NavigationCompletedCallback = func(sender *edge.ICoreWebView2, args *edge.ICoreWebView2NavigationCompletedEventArgs) {
-		if !args.IsSuccess() {
+	w.onNavigationCompleted(func(args *navigationCompletedArg) {
+		if !args.Success {
 			w.SetHtml(html)
 		}
-	}
+	})
 	return nil
 }

@@ -150,8 +150,9 @@ func (w *Window) onReady() {
 
 // 为了触发 w.onReady
 func (w *Window) preRun() {
-	w.webview.Bind("__webview_onready", w.onReady)
-	w.webview.Init(`window.addEventListener("load", function(){__webview_onready()});`)
+	w.webview.onNavigationCompleted(func(args *navigationCompletedArg) {
+		w.onReady()
+	})
 }
 
 // 当 webview 启动了，但是没有完全启动好，就 postmessage 的话，会导致初始化异常，导致奇怪bug
