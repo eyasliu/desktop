@@ -34,3 +34,31 @@ func (i *ICoreWebView2NavigationCompletedEventArgs) IsSuccess() bool {
 	}
 	return enabled
 }
+
+type COREWEBVIEW2_WEB_ERROR_STATUS uint32
+
+func (i *ICoreWebView2NavigationCompletedEventArgs) GetWebErrorStatus() COREWEBVIEW2_WEB_ERROR_STATUS {
+	var err error
+	var enabled COREWEBVIEW2_WEB_ERROR_STATUS
+	_, _, err = i.vtbl.GetWebErrorStatus.Call(
+		uintptr(unsafe.Pointer(i)),
+		uintptr(unsafe.Pointer(&enabled)),
+	)
+	if err != windows.ERROR_SUCCESS {
+		return 0
+	}
+	return enabled
+}
+
+func (i *ICoreWebView2NavigationCompletedEventArgs) GetNavigationId() int32 {
+	var err error
+	var enabled int32
+	_, _, err = i.vtbl.GetNavigationId.Call(
+		uintptr(unsafe.Pointer(i)),
+		uintptr(unsafe.Pointer(&enabled)),
+	)
+	if err != windows.ERROR_SUCCESS {
+		return -1
+	}
+	return enabled
+}

@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"strconv"
 	"sync"
+	"time"
 	"unsafe"
 
 	"github.com/eyasliu/desktop/go-webview2/internal/w32"
@@ -71,7 +72,9 @@ func loadIconFrom(src string) (windows.Handle, error) {
 }
 
 type navigationCompletedArg struct {
-	Success bool
+	Success        bool
+	WebErrorStatus edge.COREWEBVIEW2_WEB_ERROR_STATUS
+	NavigationId   int32
 }
 
 type browser interface {
@@ -598,16 +601,26 @@ func (w *webview) Show() {
 
 func (w *webview) onNavigationCompleted(h func(args *navigationCompletedArg)) {
 	w.browser.(*edge.Chromium).OnNavigationCompleted(func(sender *edge.ICoreWebView2, args *edge.ICoreWebView2NavigationCompletedEventArgs) {
-		h(&navigationCompletedArg{Success: args.IsSuccess()})
+		h(&navigationCompletedArg{
+			Success:        args.IsSuccess(),
+			WebErrorStatus: args.GetWebErrorStatus(),
+			NavigationId:   args.GetNavigationId(),
+		})
 	})
 }
 
 func (w *webview) SetFallbackPage(html string) error {
 	chromium := w.browser.(*edge.Chromium)
 	chromium.PutIsBuiltInErrorPageEnabled(false)
+	falbacked := false
 	w.onNavigationCompleted(func(args *navigationCompletedArg) {
-		if !args.Success {
+		if !args.Success && !falbacked {
 			w.SetHtml(html)
+			falbacked = true
+			go func() {
+				<-time.After(3 * time.Second)
+				falbacked = false
+			}()
 		}
 	})
 	return nil

@@ -3,6 +3,7 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"os"
 	"runtime"
 	"time"
 
@@ -122,6 +123,7 @@ func main() {
 				Title: "退出程序",
 				OnClick: func() {
 					app.Destroy()
+					os.Exit(0)
 				},
 			},
 		},
@@ -136,7 +138,6 @@ func main() {
 		Title:             "basic 演示",
 		StartURL:          "https://www.wps.cn",
 		Tray:              appTray,
-		DataPath:          "C:\\Users\\Kingsoft\\.envokv2\\webview2",
 		FallbackPage:      FallbackPage,
 	})
 
